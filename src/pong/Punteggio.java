@@ -30,10 +30,14 @@ public class Punteggio {
 
     /**
      * Una partita nuova, 0 a 0, con la sua regola per vincere.
-     * Pretende: puntiPerVincere è almeno 1; scartoMinimo è almeno 1.
+     * Pretende: niente.
+     * Lancia IllegalArgumentException se puntiPerVincere o scartoMinimo è minore di 1.
      * Promette: una partita 0 a 0, non finita, senza vincitore e con la storia vuota.
      */
     public Punteggio(int puntiPerVincere, int scartoMinimo) {
+        if (puntiPerVincere < 1 || scartoMinimo < 1) {
+            throw new IllegalArgumentException("La regola per vincere deve essere positiva");
+        }
         puntipervincere = puntiPerVincere;
         scartominimo = scartoMinimo;
         puntisx = 0;
@@ -45,13 +49,17 @@ public class Punteggio {
 
     /**
      * Il lato chi ha fatto un punto.
-     * Pretende: chi non è null.
+     * Pretende: niente.
+     * Lancia IllegalArgumentException se chi è null.
      * Promette: se la partita non era finita, il lato chi ha un punto in più, l'altro lato non
      *           cambia e il punto si aggiunge in fondo alla storia; se con questo punto il lato chi
      *           vince (regola in cima alla classe), la partita è finita e il vincitore è chi.
      *           Se la partita era già finita, non cambia niente.
      */
     public void segnaPunto(Lato chi) {
+        if (chi == null) {
+            throw new IllegalArgumentException("Il lato non può essere null");
+        }
         if (isFinita()) {
             return;
         } else if (chi == Lato.SINISTRA) {
@@ -60,13 +68,18 @@ public class Punteggio {
             this.puntidx = this.puntidx + 1;
         }
         storia.add(chi);
+        isFinita();
     }
     
     /**
-     * Pretende: chi non è null.
+     * Pretende: niente.
+     * Lancia IllegalArgumentException se chi è null.
      * Promette: i punti del lato chi. Non cambia niente.
      */
     public int getPunti(Lato chi) {
+        if (chi == null) {
+            throw new IllegalArgumentException("Il lato non può essere null");
+        }
         if (chi == Lato.SINISTRA){
             return puntisx;
         }
@@ -142,6 +155,33 @@ public class Punteggio {
     public List<Lato> getStoria() {
         return new ArrayList<>(storia); //restituisce copia
     }
+    /**
+     * Invariante: regole positive, storia non nulla e senza elementi null,
+     * contatori uguali ai punti della storia, nessun punto dopo la vittoria,
+     * e risultato della partita coerente con l’ultimo punto.
+     */
+    boolean repOK() {
+        if (puntipervincere < 1 || scartominimo < 1 || storia == null) return false;
+        if (puntisx < 0 || puntidx < 0) return false;
+        int sx = 0;
+        int dx = 0;
+        Lato vincitoreAtteso = null;
+        for (Lato punto : storia) {
+            if (punto == null || vincitoreAtteso != null) return false;
+            if (punto == Lato.SINISTRA) sx++;
+            else if (punto == Lato.DESTRA) dx++;
+            else return false;
+            if (sx >= puntipervincere && sx - dx >= scartominimo) {
+                vincitoreAtteso = Lato.SINISTRA;
+            } else if (dx >= puntipervincere && dx - sx >= scartominimo) {
+                vincitoreAtteso = Lato.DESTRA;
+            }
+        }
+        return sx == puntisx && dx == puntidx
+                && isfinita == (vincitoreAtteso != null)
+                && vincitore == vincitoreAtteso;
+    }
+
     /**
      * Una partita nuova con la stessa regola.
      * Pretende: niente.
